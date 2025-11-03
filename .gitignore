@@ -1,0 +1,7 @@
+# Hide environment and local files
+.env
+__pycache__/
+.vscode/
+.venv/
+*.pyc
+
