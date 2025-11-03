@@ -6,24 +6,16 @@ import tiktoken
 from qdrant_client import QdrantClient
 import os
 
-# Load environment variables
 load_dotenv()
 
 openai_client = OpenAI()
 
 embedding_model = OpenAIEmbeddings(model="text-embedding-3-large")
 
-# Get Qdrant credentials from .env (Cloud or Local)
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
-# Connect to Qdrant (Cloud if API key present, else local Docker)
-if "cloud.qdrant.io" in QDRANT_URL:
-    qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-else:
-    qdrant_client = QdrantClient(url=QDRANT_URL)
+qdrant_client = QdrantClient(url=QDRANT_URL)
 
-# Use existing collection
 vector_db = QdrantVectorStore.from_existing_collection(
     embedding=embedding_model,
     client=qdrant_client,
@@ -31,16 +23,12 @@ vector_db = QdrantVectorStore.from_existing_collection(
 )
 
 def chat_with_pdf(user_query):
-    # 1️⃣ Similarity search for most relevant PDF chunks
     search_results = vector_db.similarity_search(query=user_query, k=10)
 
-    # 2️⃣ Initialize tokenizer
     tokenizer = tiktoken.get_encoding("cl100k_base")
-
-    # 3️⃣ Prepare and token-count each chunk
     context_chunks = []
     total_tokens = 0
-    MAX_CONTEXT_TOKENS = 90000   # stay safe below 128k
+    MAX_CONTEXT_TOKENS = 90000
 
     for result in search_results:
         chunk_text = f"Page Content: {result.page_content}\nPage Number: {result.metadata.get('page_label', 'N/A')}"
@@ -52,34 +40,17 @@ def chat_with_pdf(user_query):
 
     context = "\n\n".join(context_chunks)
 
-    # 4️⃣ Prepare system prompt
     SYSTEM_PROMPT = (
         "You are a helpful assistant that answers questions based ONLY on the provided PDF context.\n"
         "Be concise, accurate, and if unsure, say 'Not mentioned in the document.'\n\n"
         f"Context:\n{context}\n\n"
     )
 
-    # 5️⃣ Measure full message length before sending
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_query},
     ]
-    full_text = SYSTEM_PROMPT + user_query
-    total_tokens_used = len(tokenizer.encode(full_text))
 
-    if total_tokens_used > 120000:
-        # If still too large, truncate context safely
-        trimmed_context = tokenizer.decode(tokenizer.encode(context)[:100000])
-        SYSTEM_PROMPT = (
-            "You are a helpful assistant that answers questions based ONLY on the provided PDF context.\n\n"
-            f"Context:\n{trimmed_context}\n\n"
-        )
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_query},
-        ]
-
-    # 6️⃣ Generate response
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
