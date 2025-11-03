@@ -3,27 +3,32 @@ from dotenv import load_dotenv
 from langchain_qdrant import QdrantVectorStore
 from openai import OpenAI
 import tiktoken
+from qdrant_client import QdrantClient
+import os
 
+# Load environment variables
 load_dotenv()
 
 openai_client = OpenAI()
 
-embedding_model = OpenAIEmbeddings(
-    model="text-embedding-3-large"
-)
+embedding_model = OpenAIEmbeddings(model="text-embedding-3-large")
 
+# Get Qdrant credentials from .env (Cloud or Local)
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+
+# Connect to Qdrant (Cloud if API key present, else local Docker)
+if "cloud.qdrant.io" in QDRANT_URL:
+    qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+else:
+    qdrant_client = QdrantClient(url=QDRANT_URL)
+
+# Use existing collection
 vector_db = QdrantVectorStore.from_existing_collection(
-
-     embedding=embedding_model,
-     url = "http://localhost:6333" ,
-     collection_name = "learning rag",
+    embedding=embedding_model,
+    client=qdrant_client,
+    collection_name="learning rag",
 )
-
-
-
-
-
-
 
 def chat_with_pdf(user_query):
     # 1️⃣ Similarity search for most relevant PDF chunks
@@ -83,5 +88,3 @@ def chat_with_pdf(user_query):
     )
 
     return response.choices[0].message.content
-
-
