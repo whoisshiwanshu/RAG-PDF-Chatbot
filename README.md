@@ -10,7 +10,7 @@ cd rag-pdf-chatbot
 pip install -r requirements.txt
 
 
-Create a .env file:
+> CREATE A NEW .ENV FILE
 
 OPENAI_API_KEY=your_openai_api_key
 
@@ -29,14 +29,12 @@ streamlit run ui.py
 🧠 Tech
 
 Streamlit
-
 LangChain
-
 OpenAI API
-
 Qdrant
 
-📦 requirements.txt
+📦REQUIREMENTS.TXT
+
 streamlit
 langchain
 langchain-community
