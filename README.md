@@ -5,7 +5,7 @@ Upload PDFs, index them, and chat with their content.
 
 ⚙️ Setup
 
-git clone https://github.com/yourusername/rag-pdf-chatbot.git
+git clone https://github.com/whoisshiwanshu/rag-pdf-chatbot.git
 cd rag-pdf-chatbot
 pip install -r requirements.txt
 
