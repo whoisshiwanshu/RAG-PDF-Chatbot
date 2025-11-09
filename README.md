@@ -28,10 +28,7 @@ streamlit run ui.py
 
 🧠 Tech
 
-Streamlit
-LangChain
-OpenAI API
-Qdrant
+Streamlit , LangChain , OpenAI API , Qdrant
 
 📦REQUIREMENTS.TXT
 
